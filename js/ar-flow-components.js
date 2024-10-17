@@ -66,23 +66,32 @@ AFRAME.registerComponent('text-info', {
     this.textInfo = document.createElement('a-text');
     this.textInfo.setAttribute('value', "Info");
     this.textInfo.setAttribute('color', 'lightgray');
-    this.textInfo.setAttribute('position', '-0.1 0.004 -0.097'); // Slightly in front of the parent entity
-    this.textInfo.setAttribute('scale', '0.04 0.04 0.04'); // Slightly in front of the parent entity
+    this.textInfo.setAttribute('position', '-0.091 0.006 -0.097'); // Slightly in front of the parent entity
+    this.textInfo.setAttribute('scale', '0.038 0.038 0.038'); // Slightly in front of the parent entity
     this.el.appendChild(this.textInfo);
  
     this.textCredits = document.createElement('a-text');
     this.textCredits.setAttribute('value', "trmg a nxktg (Dati e Soldi)");
     this.textCredits.setAttribute('color', 'lightgray');
-    this.textCredits.setAttribute('position', '-0.1 -0.008 -0.097'); // Slightly in front of the parent entity
+    this.textCredits.setAttribute('position', '-0.091 -0.005 -0.097'); // Slightly in front of the parent entity
     this.textCredits.setAttribute('scale', '0.02 0.02 0.02'); // Slightly in front of the parent entity
     this.el.appendChild(this.textCredits);
       
     this.textCredits2 = document.createElement('a-text');
     this.textCredits2.setAttribute('value', "DataViz Challenge 2024");
     this.textCredits2.setAttribute('color', 'lightgray');
-    this.textCredits2.setAttribute('position', '-0.001 -0.008 -0.097'); // Slightly in front of the parent entity
+    this.textCredits2.setAttribute('position', '-0.001 -0.005 -0.097'); // Slightly in front of the parent entity
     this.textCredits2.setAttribute('scale', '0.02 0.02 0.02'); // Slightly in front of the parent entity
     this.el.appendChild(this.textCredits2);    
+      
+    this.textCredits3 = document.createElement('a-text');
+    this.textCredits3.setAttribute('value', "Status");
+    this.textCredits3.setAttribute('width', 5); // Assuming full width
+    this.textCredits3.setAttribute('wrapCount', 1000); // Assuming full width
+    this.textCredits3.setAttribute('color', 'pink');
+    this.textCredits3.setAttribute('position', '-0.075 -0.0095 -0.097'); // Slightly in front of the parent entity
+    this.textCredits3.setAttribute('scale', '0.025 0.025 0.025'); // Slightly in front of the parent entity
+    this.el.appendChild(this.textCredits3);   
       
     var plane = document.createElement('a-plane');
     plane.setAttribute('position', '0 0 -0.1'); // Below the text
@@ -150,6 +159,9 @@ AFRAME.registerComponent('text-info', {
   },
 update_credits2: function (newText) {
      this.el.children[2].setAttribute('value', newText);
+  },
+    update_status: function (newText) {
+     this.el.children[3].setAttribute('value', newText);
   }
 });
 

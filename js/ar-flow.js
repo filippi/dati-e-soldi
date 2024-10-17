@@ -1,6 +1,7 @@
-const LAGRANGIAN = 0; 
-const FIRECASTER = 1; 
-const RAIN = 2;
+const NETWORK = 0; 
+const LAGRANGIAN = 1; 
+const FIRECASTER = 2; 
+const RAIN = 3;
 const firecasterAPI = 'https://forefire.univ-corse.fr/twin/simapi/forefireAPI.php?';
 
 AFRAME.registerComponent('flow-tracer', {
@@ -146,7 +147,7 @@ AFRAME.registerComponent('flow-tracer', {
 
                 this.speedup_index = 3;
 
-                this.interactionMode = LAGRANGIAN;
+                this.interactionMode = NETWORK;
 
                 // FIRE SIMULATION STUFF
                 this.fcastPath = 0
@@ -343,11 +344,141 @@ AFRAME.registerComponent('flow-tracer', {
                 this.el.setObject3D('injections', this.injectPoints);
 
                 this.isStopped = false;
+            
+            
+                this.powerNetwork = getAllNodesWithTypes();       
+                this.networkInfoText = printCost();    
+                            // Initialize network node count
+                this.networkNodeCount = this.powerNetwork.length;
+
+                // Initialize arrays for network node positions and colors
+                this.networkPositions = new Float32Array(this.networkNodeCount * 4); // x, y, z, w per node
+                this.networkColors = new Float32Array(this.networkNodeCount * 3); // r, g, b per node
+
+                // Create geometry and set attributes
+                this.networkGeometry = new THREE.BufferGeometry();
+                this.networkGeometry.setAttribute('position', new THREE.BufferAttribute(this.networkPositions, 4));
+                this.networkGeometry.setAttribute('color', new THREE.BufferAttribute(this.networkColors, 3));
+
+                // Create material for network nodes
+                this.networkMaterial = new THREE.ShaderMaterial({
+                    uniforms: {
+                        size: { value: 30 }, // Adjust the size as needed
+                        time: { value: 0.0 } // For animations
+                    },
+                    vertexShader: `
+                        uniform float size;
+                        uniform float time;
+                        attribute vec3 color;
+                        varying vec3 vColor;
+                        varying float vTime;
+                        void main() {
+                            vColor = color;
+                            vTime = time;
+                            vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+                            gl_PointSize = size;
+                            gl_Position = projectionMatrix * mvPosition;
+                        }
+                    `,
+                    fragmentShader: `
+                        varying vec3 vColor;
+                        varying float vTime;
+                        void main() {
+                            vec2 coord = gl_PointCoord - vec2(0.5);
+                            float dist = length(coord);
+                            float gradient = smoothstep(0.5, 0.0, dist);
+
+                            // Pulsating effect
+                            float pulse = 0.5 + 0.5 * sin(vTime * 2.0);
+
+                            // Combine gradient and pulse
+                            vec3 color = vColor * gradient * pulse;
+
+                            // Alpha fades towards the edges
+                            float alpha = gradient;
+
+                            gl_FragColor = vec4(color, alpha);
+                        }
+                    `,
+                    depthTest: true,
+                    transparent: true
+                });
+
+                this.networkMaterial = this.networkMaterial;
+                // Create Points object
+                this.networkPoints = new THREE.Points(this.networkGeometry, this.networkMaterial);
+                this.networkPoints.frustumCulled = false; // Ensure points are always rendered
+
+                // Add network points to the scene
+                this.el.setObject3D('networkPoints', this.networkPoints);
+
+                // Initial refresh of the network
+                this.refreshNetwork();
 
             })
             .catch(error => console.error('Erreur lors du chargement du fichier JSON:', error));
     },
+    refreshNetwork: function() {
+        // Recompute powerNetwork in case it has updated
+        this.powerNetwork = getAllNodesWithTypes();
+        var nodeCount = this.powerNetwork.length;
 
+        // If the number of nodes has changed, recreate the arrays and attributes
+        if (nodeCount !== this.networkNodeCount) {
+            this.networkNodeCount = nodeCount;
+            this.networkPositions = new Float32Array(this.networkNodeCount * 4);
+            this.networkColors = new Float32Array(this.networkNodeCount * 3);
+            this.networkGeometry.setAttribute('position', new THREE.BufferAttribute(this.networkPositions, 4));
+            this.networkGeometry.setAttribute('color', new THREE.BufferAttribute(this.networkColors, 3));
+        }
+
+        for (var i = 0; i < this.powerNetwork.length; i++) {
+            var node = this.powerNetwork[i];
+            var geohash = node.id;
+            var type = node.type;
+
+            // Decode geohash to get lat, lon
+            var [lat, lon] = decodeGeoHash(geohash);
+
+            // Transform lat/lon to x,z (and later get y)
+            var point = transformLatLonToPoint(lat, lon, this.data2D.BBox, this.origin, this.extents);
+
+            var x = point.x;
+            var z = point.y;
+
+            // Get y coordinate via interpolateAt
+            var rloc = interpolateAt(this.data2D, x, z, this.timeIndex1, this.timeIndex2, this.rIndices);
+            var y = rloc.z + 0.01; // Adjust as needed
+
+            // Set position in networkPositions array
+            this.networkPositions[i * 4] = x;
+            this.networkPositions[i * 4 + 1] = y;
+            this.networkPositions[i * 4 + 2] = z;
+            this.networkPositions[i * 4 + 3] = 1; // Optional w component
+
+            // Set color based on type
+            var color = new THREE.Color();
+
+            if (type === 2) {
+                color.set('green');
+            } else if (type === 1) {
+                color.set('red');
+            } else if (type === 0) {
+                color.set('orange');
+            } else {
+                color.set('white'); // Default color
+            }
+
+            // Set color in networkColors array
+            this.networkColors[i * 3] = color.r;
+            this.networkColors[i * 3 + 1] = color.g;
+            this.networkColors[i * 3 + 2] = color.b;
+        }
+
+        // Mark attributes as needing update
+        this.networkGeometry.attributes.position.needsUpdate = true;
+        this.networkGeometry.attributes.color.needsUpdate = true;
+    },
     setInjectionColor: function(red, green, blue) {
         if (this.injectPoints && this.injectPoints.material && this.injectPoints.material.uniforms.color) {
             this.injectPoints.material.uniforms.color.value.setRGB(red, green, blue);
@@ -366,6 +497,9 @@ AFRAME.registerComponent('flow-tracer', {
         }
         if (this.interactionMode == RAIN) {
             newSTR += "trigger RAIN";
+        }
+        if (this.interactionMode == NETWORK) {
+            newSTR += "trigger NETWORK";
         }
         return newSTR;
     },
@@ -413,11 +547,17 @@ AFRAME.registerComponent('flow-tracer', {
                    this.setInjectionColor(0.5, 0.5, 1.0);
                 }else{
                     if (this.interactionMode == RAIN){
-                        this.interactionMode = FIRECASTER;
+                        initGraph();
+                        this.interactionMode = NETWORK;
                           this.setInjectionColor(1.0, 0.5, 0.1);
+                    }else{
+                    if (this.interactionMode == NETWORK){
+                        this.interactionMode = FIRECASTER;
+                          this.setInjectionColor(1.0, 0.5, 0.5);
                     }
                 }
             
+            }
             }
  
     },
@@ -493,6 +633,16 @@ AFRAME.registerComponent('flow-tracer', {
 
             this.injectCount += 1;
             this.shootOK = true;
+        }
+        if (this.interactionMode == NETWORK) {
+            this.powerNetwork = getAllNodesWithTypes();
+            const { lat, lon } = transformPointToLatLon(intersectionPoint.x, intersectionPoint.z, this.data2D.BBox, this.origin, this.extents);
+            clickEvent(lat, lon);
+            
+              this.refreshNetwork();
+            this.networkInfoText = printCost();
+            this.text_tracker.update_status(this.networkInfoText);
+          
         }
         if (this.interactionMode == FIRECASTER) {
             if (this.interactionPossible == false) {
@@ -601,6 +751,11 @@ AFRAME.registerComponent('flow-tracer', {
 
     tick: function(time, timeDelta) {
         if (!this.isStopped){
+            
+            if (this.networkMaterial) {
+                this.networkMaterial.uniforms.time.value = time / 1000.0; // Convert time to seconds
+            }
+            
             
             this.currentAdvDuration += +timeDelta;
             if (this.currentAdvDuration < this.cMaxAps){

@@ -256,17 +256,18 @@ function reinit() {
 function clickEvent(lat, lon) {
     const radius = 1000; // 1km
     const nearbyGeohashes = findPointsWithinRadius(lat, lon, radius);
-
+//    console.log("destroy",lat,lon);
     for (let geohash of nearbyGeohashes) {
         removePoint(geohash);
     }
+
 }
 
 function printCost() {
     const pylonsPerKm = 2
     const pylonCostPerKm = 288000
     const pylonCost = pylonCostPerKm / pylonsPerKm
-    console.log(detruits + " poteaux détruits : " + pylonCost * detruits + " € de coûts de réparation");
+    var returnMessage = detruits + " KO: " + Math.round(pylonCost * detruits*0.001) + "KEuros ";
 
     const lineLength = 710 ; // km
     const surfaceCorsica = 8680; // km²
@@ -284,5 +285,5 @@ function printCost() {
             disconnectedCount++;
         }
     });
-    console.log(disconnectedCount + " poteaux déconnectés : " + costPerPylon * disconnectedCount + " €/heure d'interruption de service");
+    return returnMessage + disconnectedCount + " OFF :" + Math.round(costPerPylon * (disconnectedCount +detruits) * 0.001) + "KEuros/h";
 }

@@ -8,6 +8,8 @@
     <script src="https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v7.2.0/dist/aframe-extras.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
     <script src="https://unpkg.com/aframe-terrain-model-component@1.0.1/dist/aframe-terrain-model-component.min.js"></script>
+          <script src="https://unpkg.com/cytoscape/dist/cytoscape.min.js"></script>
+    <script id="data-script" src="js/network.js" data-edges-path="sample_data/edges.json" data-nodes-path="sample_data/nodes.json"></script>
      <script src="js/ARData.js"></script>    
       <script src="js/ar-flow-components.js"></script>
     <script src="js/ar-flow.js"></script>
@@ -111,7 +113,7 @@
         
              <a-entity  id="myViewPoint"  movement-controls="fly: true; speed: 0.03" rotation="-80 0 0" position="0 1.50 0">
         
-                 <a-entity camera position="0 1.50 0" rotation="0 0 0" look-controls>
+                 <a-entity camera position="0 0 0 " rotation="0 0 0" look-controls>
                  
                 <a-entity id="timeLabel" 
                       text-info="defaultText: Not loaded" 
