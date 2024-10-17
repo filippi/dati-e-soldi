@@ -653,7 +653,7 @@ AFRAME.registerComponent('flow-tracer', {
                                 for (const [name, positionString] of Object.entries(data)) {
                                     const [xStr, yStr, zStr] = positionString.split(':');
                                     const x = parseFloat(xStr);
-                                    const y = parseFloat(yStr)-1;
+                                    const y = parseFloat(yStr);
                                     const z = parseFloat(zStr);
 
                                     if (this.spheres[name]) {
