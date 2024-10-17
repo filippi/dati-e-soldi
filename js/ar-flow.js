@@ -366,6 +366,7 @@ AFRAME.registerComponent('flow-tracer', {
                         size: { value: 30 }, // Adjust the size as needed
                         time: { value: 0.0 } // For animations
                     },
+                    
                     vertexShader: `
                         uniform float size;
                         uniform float time;
@@ -381,24 +382,24 @@ AFRAME.registerComponent('flow-tracer', {
                         }
                     `,
                     fragmentShader: `
-                        varying vec3 vColor;
-                        varying float vTime;
-                        void main() {
-                            vec2 coord = gl_PointCoord - vec2(0.5);
-                            float dist = length(coord);
-                            float gradient = smoothstep(0.5, 0.0, dist);
+                     varying vec3 vColor;
+                    varying float vTime;
+                    void main() {
+                        vec2 coord = gl_PointCoord - vec2(0.5);
+                        float dist = length(coord);
 
-                            // Pulsating effect
-                            float pulse = 0.5 + 0.5 * sin(vTime * 2.0);
+                        // Use step for a sharp edge
+                        float gradient = step(dist, 0.5);
 
-                            // Combine gradient and pulse
-                            vec3 color = vColor * gradient * pulse;
+                        // Pulsating effect
+                        float pulse = 0.75 + 0.25 * sin(vTime * 4.0); // Adjusted amplitude and frequency
 
-                            // Alpha fades towards the edges
-                            float alpha = gradient;
+                        // Combine gradient and pulse
+                        vec3 color = vColor * pulse;
 
-                            gl_FragColor = vec4(color, alpha);
-                        }
+                        // Alpha is either 1.0 or 0.0 for sharp edges
+                        gl_FragColor = vec4(color, gradient);
+                    }
                     `,
                     depthTest: true,
                     transparent: true
@@ -753,7 +754,7 @@ AFRAME.registerComponent('flow-tracer', {
         if (!this.isStopped){
             
             if (this.networkMaterial) {
-                this.networkMaterial.uniforms.time.value = time / 1000.0; // Convert time to seconds
+                this.networkMaterial.uniforms.time.value = time / 400.0; // Convert time to seconds
             }
             
             
