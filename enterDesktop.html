@@ -37,8 +37,8 @@
       console.log("Flow ",flowTracerComponent);
       var TLab = document.getElementById('timeLabel').components['text-info'];
       flowTracerComponent.setTextTracker(TLab);
-      TLab.update_credits("Keyboard: [p]Pause Speed[+]Up[-]Down [m]Mode");
-      TLab.update_credits2("[Space]Interact [arrows]move [dragMouse]rotate");
+      TLab.update_credits(" - Keyboard: [p]Pause [m]Mode [Space]Interact");
+      TLab.update_credits2("[arrows] move [dragMouse] rotate");
       var CLab = document.getElementById('handControl').components['shoot-controls'];
       flowTracerComponent.setHandControl(CLab);
       
@@ -49,10 +49,10 @@
                 flowTracerComponent.togglePause();
                 console.log("Pausing");
             };
-            if (event.key === '+') {
+            if (event.key === 'a') {
                 flowTracerComponent.speedUp();
             };
-            if (event.key === '-') {
+            if (event.key === 'b') {
                 flowTracerComponent.speedDown();
             };
             if (event.key === 'm') {
@@ -109,7 +109,7 @@
    
 
         
-             <a-entity movement-controls="fly: true; speed: 0.03" rotation="-80 0 0" position="0 2.50 0.5">
+             <a-entity  id="myViewPoint"  movement-controls="fly: true; speed: 0.03" rotation="-80 0 0" position="0 1.50 0">
         
                  <a-entity camera position="0 0 0 " rotation="0 0 0" look-controls>
                  
@@ -122,7 +122,7 @@
                 </a-entity>   
   
            
-  </a-entity>
+            </a-entity>
   
 
                  </a-entity>
