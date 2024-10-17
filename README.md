@@ -69,6 +69,8 @@ Après avoir détruit des pylônes, la partie du réseau qui n'est plus connect�
 
 - **Lucas Laurens** : Ingénieur et doctorant en informatique
 
+- **Antoine Belgodère** : Chercheur en économie
+
 - **Jean-Baptiste Filippi** : Chercheur en informatique
   
 ## Fichiers
