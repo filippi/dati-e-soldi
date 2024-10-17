@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Dati e soldi AR</title>
+    <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v7.2.0/dist/aframe-extras.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
+    <script src="https://unpkg.com/aframe-terrain-model-component@1.0.1/dist/aframe-terrain-model-component.min.js"></script>
+    <script src="../js/ar-flow.js"></script>
+<script>
+  // This function prints the position from the entity with movement-controls and the rotation from the camera
+  function printPosAndRot() {
+    var movementControlEntity = document.querySelector('[movement-controls]');
+    var cameraEl = document.querySelector('a-camera') || document.querySelector('[camera]');
+    
+    if (movementControlEntity && cameraEl) {
+      var position = movementControlEntity.getAttribute('position');
+      var rotation = cameraEl.getAttribute('rotation');
+      console.log(`<a-entity movement-controls="fly: true; speed: 10" position="${position.x} ${position.y} ${position.z}" rotation="${rotation.x} ${rotation.y} ${rotation.z}" look-controls>\n<a-entity camera position="0 0 0" rotation="0 0 0" look-controls></a-entity>\n</a-entity>`);
+    } else {
+      console.error('Required entities not found');
+    }
+  };
+
+  // Example: Call this function when the 'p' key is pressed
+  document.addEventListener('DOMContentLoaded', function() {
+      
+    var sceneEl = document.getElementById('flowview');
+    sceneEl.addEventListener('loaded', function() {
+      
+      var flowTracerComponent = document.getElementById('surface-current').components['flow-tracer'];
+      
+      console.log("Flow ",flowTracerComponent);
+      var TLab = document.getElementById('timeLabel').components['text-info'];
+      flowTracerComponent.setTextTracker(TLab);
+      
+      var CLab = document.getElementById('handControl').components['shoot-controls'];
+      flowTracerComponent.setHandControl(CLab);
+      
+        document.addEventListener('keydown', function(event) {
+
+            if (event.key === 'p') {
+                printPosAndRot();
+                flowTracerComponent.togglePause();
+                console.log("Pausing");
+            };
+            if (event.key === '+') {
+                flowTracerComponent.speedUp();
+            };
+            if (event.key === '-') {
+                flowTracerComponent.speedDown();
+            };
+
+        });
+     });
+
+  // Assuming A-Frame is already loaded and the scene is set up
+ 
+  var camera = document.querySelector('[camera]');
+  var scene = document.querySelector('a-scene');
+  var TLab = document.getElementById('timeLabel').components['text-info'];
+ 
+      
+      var CLab = document.getElementById('handControl').components['shoot-controls'];
+  // Function to move the timeLabel to the camera
+  function moveToCamera() {
+    camera.appendChild(timeLabel);
+    TLab.setAttribute('defaultText',"Not loaded" );
+    TLab.setAttribute('color',"black" );
+    TLab.setAttribute('rotation', "-0 0 0");
+  }
+
+  // Function to move the timeLabel to the handControl
+  function moveToHandControl() {
+    CLab.appendChild(timeLabel);
+    TLab.setAttribute('defaultText',"Not loaded" );
+    TLab.setAttribute('color',"black" );
+    TLab.setAttribute('position', "0 0.20 0.12");
+    TLab.setAttribute('rotation', "-60 10 0");
+  }
+
+
+});
+</script>
+  </head>
+  <body> 
+    <a-scene id="flowview" arjs='sourceType: webcam; debugUIEnabled: false;' background="color: black"> 
+        <!-- renderer="antialias: true" -->
+
+        <a-entity id="surface-current" 
+                  flow-tracer="datafile: sample_data/centre.zip; 
+                               number_of_particles: 6000; 
+                               trail_length: 8;
+                               target_advect_per_s: 30; 
+                               flowTracerSpeed: 0.5; 
+                               raycast_plane: false; 
+                               scale: 40000; 
+                               demFile: url(sample_data/centre.bin); 
+                                dataPointResolutionAlongX: 825.7214672920602;
+                                dataPointResolutionAlongY: 1099.663037586159;
+                                demColumns: 125;
+                                demLines: 100;
+                                dataColumns: 125;
+                                dataLines: 100;
+                                demMax: 2489;
+                               demTexture: url(sample_data/centre.jpg); 
+                               wireflame: false;
+                               verticalExageration: 5"
+                  position="0 1 0">
+        </a-entity>
+               
+   
+      <!--     <a-entity look-controls movement-controls="acceleration:10;fly:false" position="0 1.50 0.5">-->
+             <a-entity movement-controls="fly: true; speed: 0.1" position="0 1.50 0.5">
+        
+                 <a-entity camera position="0 1.50 0.5" rotation="-75 0 0">
+    
+            </a-entity>
+            <a-cursor id="handControl" 
+                      laser-controls="hand: right" 
+                      shoot-controls
+                      raycaster="objects: .raycastable; interval: 200"
+                      material="color: black; shader: flat"
+                      position="0 1.20 0.12"
+                      >
+                <a-entity id="timeLabel" 
+                      text-info="defaultText: Not loaded" 
+                      color="black" 
+                      position="0 0.20 0.12" 
+                      scale="1 1 1" 
+                      rotation="-60 10 00">
+                </a-entity>   
+            </a-cursor>
+           </a-entity>
+    </a-scene>
+
+  </body>
+</html>

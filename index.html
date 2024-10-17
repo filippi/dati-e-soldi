@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dati e soldi - DataVIZ Challenge 2024</title>
+    <style>
+        body {
+            font-family: 'Orbitron', sans-serif;
+            background-color: #000;
+            color: #0f0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+        h1, h2 {
+            text-align: center;
+        }
+        #project-details {
+            width: 80%;
+            margin-bottom: 20px;
+            padding: 15px;
+            border: 2px solid #0f0;
+            background-color: #111;
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.5);
+        }
+        #map-container {
+            width: 80%;
+            height: 600px;
+            margin-bottom: 20px;
+            border: 2px solid #0f0;
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.5);
+        }
+        #select-location {
+            font-size: 1.5em;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #0f0;
+            text-shadow: 0 0 10px #0f0;
+        }
+        #buttons-container {
+            display: flex;
+            width: 80%;
+        }
+        .action-button {
+            flex: 1;
+            padding: 10px;
+            background-color: #222;
+            border: 2px solid #0f0;
+            color: #0f0;
+            cursor: pointer;
+            text-align: center;
+            text-transform: uppercase;
+            margin: 5px;
+            box-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+        }
+        .action-button:hover {
+            background-color: #333;
+        }
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
+    </style>
+    <script src='https://api.mapbox.com/mapbox-gl-js/v2.9.2/mapbox-gl.js'></script>
+    <link href='https://api.mapbox.com/mapbox-gl-js/v2.9.2/mapbox-gl.css' rel='stylesheet' />
+</head>
+<body>
+    <div id="project-details">
+        <h3>DataVIZ Challenge 2024 - Fundazione, Università di Corsica, Chaire MITI</h3>
+        <h2> <strong>Cabgwqkxng, tg trmg a nxktg</strong> (Periculosi, di dati e soldi)</h2> 
+        <p>Révolution de la manière dont les événements climatiques sont anticipés. Ce système permet de visualiser prévisions, mais aussi d'interagir avec les infrastructures critiques et évaluer en temps réel les impacts économiques des décisions prises. Casque VR souhaité !</p>
+        <p>
+            <li><strong>Lucas Laurens</strong>: Ingénieur et doctorant en informatique, <strong>Antoine Belgorère</strong>: Économiste, <strong>Jean-Baptiste Filippi</strong>: Chercheur au CNRS</li>
+        </p>
+    </div>
+
+    <div id="select-location">SELECT LOCATION</div>
+    <div id="map-container"></div>
+
+    <div id="buttons-container">
+        <div class="action-button" id="enter-ar">Entrer AR/VR</div>
+        <div class="action-button" id="enter-desktop">Entrer Desktop</div>
+    </div>
+
+    <script>
+        mapboxgl.accessToken = 'pk.eyJ1IjoiYmF0dGlmaWxpcHBpIiwiYSI6ImNtMmRjMm9vbDFkaHkyanM3aGx0eHFjenAifQ.T8wkQRBIrEELD5m8gmijiQ';
+        let map;
+        let selectedCoordinates = { lat: 42.0396, lng: 9.0129 }; // Default coordinates (Corte, Corsica)
+
+        function initMap() {
+            map = new mapboxgl.Map({
+                container: 'map-container',
+                style: 'mapbox://styles/mapbox/satellite-v9',
+                center: [selectedCoordinates.lng, selectedCoordinates.lat],
+                zoom: 6,
+                pitch: 45,
+                bearing: -17.6,
+                antialias: true
+            });
+
+            let bounds = getBounds(selectedCoordinates);
+            let rectangle = new mapboxgl.LngLatBounds(bounds[0], bounds[1]);
+
+            map.on('load', function () {
+                map.addLayer({
+                    id: 'rectangle-layer',
+                    type: 'fill',
+                    source: {
+                        type: 'geojson',
+                        data: {
+                            type: 'Feature',
+                            geometry: {
+                                type: 'Polygon',
+                                coordinates: [[
+                                    bounds[0],
+                                    [bounds[0][0], bounds[1][1]],
+                                    bounds[1],
+                                    [bounds[1][0], bounds[0][1]],
+                                    bounds[0]
+                                ]]
+                            }
+                        }
+                    },
+                    layout: {},
+                    paint: {
+                        'fill-color': '#f00',
+                        'fill-opacity': 0.3
+                    }
+                });
+            });
+
+            map.on('click', function (e) {
+                selectedCoordinates = adjustCoordinates(e.lngLat.lat, e.lngLat.lng);
+                updateRectangle();
+            });
+        }
+
+        function adjustCoordinates(lat, lng) {
+            return {
+                lat: Math.round(lat * 2) / 2,
+                lng: Math.round(lng * 2) / 2
+            };
+        }
+
+        function getBounds(center) {
+            let latOffset = 0.576;
+            let lngOffset = 0.864;
+            return [
+                [center.lng - lngOffset, center.lat - latOffset],
+                [center.lng + lngOffset, center.lat + latOffset]
+            ];
+        }
+
+        function updateRectangle() {
+            let bounds = getBounds(selectedCoordinates);
+            map.getSource('rectangle-layer').setData({
+                type: 'Feature',
+                geometry: {
+                    type: 'Polygon',
+                    coordinates: [[
+                        bounds[0],
+                        [bounds[0][0], bounds[1][1]],
+                        bounds[1],
+                        [bounds[1][0], bounds[0][1]],
+                        bounds[0]
+                    ]]
+                }
+            });
+        }
+
+        document.getElementById('enter-ar').addEventListener('click', function () {
+            window.location.href = `enterAR.html?lat=${selectedCoordinates.lat}&lng=${selectedCoordinates.lng}`;
+        });
+
+        document.getElementById('enter-desktop').addEventListener('click', function () {
+            window.location.href = `enterDesktop.html?lat=${selectedCoordinates.lat}&lng=${selectedCoordinates.lng}`;
+        });
+
+        window.onload = initMap;
+    </script>
+</body>
+</html>
