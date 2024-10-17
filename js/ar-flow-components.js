@@ -242,8 +242,7 @@ AFRAME.registerComponent('shoot-controls', {
       var mouse = this.mouse;
       var camera = this.el.sceneEl.camera;
       var raycaster = new THREE.Raycaster();
-//      
-       console.log(myMouse);
+ 
         raycaster.setFromCamera(myMouse, camera);
       var flowMapEl = document.getElementById('flow_map_caster');
       if (!flowMapEl) return;
@@ -252,7 +251,7 @@ AFRAME.registerComponent('shoot-controls', {
         
       if (intersects.length > 0) {
         var intersectionPoint = intersects[0].point;
-          console.log(intersectionPoint);
+        
         this.flow_tracer.injectParticleXY(intersectionPoint);
       }
     }
