@@ -1,443 +1,7 @@
-function transformLatLonToPoint(lat, lon, bbox, origin, extents) {
-    // Calculate scale factors
-    const scaleX = extents.width / (bbox.E - bbox.W);
-    const scaleY = extents.height / (bbox.N - bbox.S);
-
-    // Translate lat, lon to x, y in the new coordinate system
-    const x = origin.x + (lon - bbox.W) * scaleX;
-    const y = origin.y + (bbox.N - lat) * scaleY; // Subtract from N to invert the Y axis
-
-    return { x, y };
-}
-function formatDateForPath(date) {
-    // Format date as "YYYY-MM-DD_HH-MM-SS"
-    return date.toISOString()
-               .replace(/:\d\d\.\d+Z$/, '') // Removes seconds fraction and Z
-               .replace(/:/g, '-') // Replaces remaining colons with hyphens
-               .replace('T', '_'); // Replaces T with underscore
-}
-
-function formatDateForDateParam(date) {
-    // Format date as "YYYY-MM-DDTHH:MM:SSZ", removing milliseconds
-    return date.toISOString().replace(/\.\d+Z$/, 'Z');
-}
-function transformPointToLatLon(x, y, bbox, origin, extents) {
-    // Calculate scale factors
-    const scaleX = extents.width / (bbox.E - bbox.W);
-    const scaleY = extents.height / (bbox.N - bbox.S);
-
-    // Reverse translate x, y to lat, lon in the original coordinate system
-    const lon = ((x - origin.x) / scaleX) + bbox.W;
-    const lat = bbox.N - ((y - origin.y) / scaleY);
-
-    return { lat, lon };
-}
-function encodeCoordinate(lat, lng) {
-    let encode = (value) => {
-        let encoded = '';
-        let v = Math.floor(value < 0 ? ~(value << 1) : (value << 1));
-        while (v >= 0x20) {
-            encoded += String.fromCharCode((0x20 | (v & 0x1f)) + 63);
-            v >>= 5;
-        }
-        encoded += String.fromCharCode(v + 63);
-        return encoded;
-    };
-
-    let latCode = encode(Math.round(lat * 1e5));
-    let lngCode = encode(Math.round(lng * 1e5));
-
-    return latCode + lngCode;
-}
-
-function getDateTimeString(timeInMilliseconds) {
-    // Create a new Date object using the provided timestamp
-    
-    const date = new Date(timeInMilliseconds);
-    // Extract the day, month, year, hours, and minutes
-    const day = date.getDate();
-    const month = date.getMonth() + 1; // getMonth() returns 0-11
-    const year = date.getFullYear();
-    const hours = date.getHours();
-    const minutes = date.getMinutes();
-
-    // Format the date and time strings
-    const dateString = day + '/' + month + '/' + year;
-    const timeString = (hours < 10 ? '0' : '') + hours + ':' + (minutes < 10 ? '0' : '') + minutes;
-
-    // Combine date and time into one string
-    const dateTimeString = dateString + ' ' + timeString;
-
-    return dateTimeString;
-}
-
-function interpolateAt(s_field, x, y,timeIndex1, timeIndex2, rIndices) {
-    
-    // Destructuring to get origin, extents, and altitude
-    const { origin, extents, altitude } = s_field;
-
-    // Accessing the U and V values for the specific time index
-    const { U: U1, V: V1 } = s_field.data[timeIndex1];
-    const { U: U2, V: V2 } = s_field.data[timeIndex2];
-    //console.log(Object.keys(s_field.data));
-
-    // Calculate indices and fractional parts for interpolation
-    const fx = ((x - origin.x) / extents.width) * (altitude.length - 1);
-    const fy = ((y - origin.y) / extents.height) * (altitude[0].length - 1);
-    const ix1 = Math.floor(fx);
-    const iy1 = Math.floor(fy);
-    const ix2 = Math.min(ix1 + 1, altitude.length - 1);
-    const iy2 = Math.min(iy1 + 1, altitude[0].length - 1);
-    const fracX = fx - ix1;
-    const fracY = fy - iy1;
-    
-    if (ix1 < 0 || ix1 > altitude.length - 1 ||
-        ix2 < 0 || ix2 > altitude.length - 1 ||
-        iy1 < 0 || iy1 > altitude[0].length - 1 ||
-        iy2 < 0 || iy2 > altitude[0].length - 1) {
-        return { z: 0, y: 0, x: 0 };
-    }
-    // Inline bilinear interpolation
-    const interpolate = (matrix) => 
-        (1 - fracX) * ((1 - fracY) * matrix[ix1][iy1] + fracY * matrix[ix1][iy2]) +
-        fracX * ((1 - fracY) * matrix[ix2][iy1] + fracY * matrix[ix2][iy2]);
-
-    return {
-        z: interpolate(altitude),
-        u: interpolate(U1)*rIndices+interpolate(U2)*(1-rIndices),
-        v: interpolate(V1)*rIndices+interpolate(V2)*(1-rIndices)
-    };
-} 
-function interpolateRunoffAt(s_field, x, y, timeIndex) {
-    // Destructuring to get origin, extents, and altitude
-    const { origin, extents, altitude } = s_field;
-
-    // Calculate indices and fractional parts for interpolation
-    const fx = ((x - origin.x) / extents.width) * (altitude.length - 1);
-    const fy = ((y - origin.y) / extents.height) * (altitude[0].length - 1);
-    const ix1 = Math.floor(fx);
-    const iy1 = Math.floor(fy);
-    const ix2 = Math.min(ix1 + 1, altitude.length - 1);
-    const iy2 = Math.min(iy1 + 1, altitude[0].length - 1);
-    const fracX = fx - ix1;
-    const fracY = fy - iy1;
-
-    if (ix1 < 0 || ix2 >= altitude.length || iy1 < 0 || iy2 >= altitude[0].length) {
-        return { z: 0, steepestSlopeU: 0, steepestSlopeV: 0 };
-    }
-
-    // Inline bilinear interpolation for altitude
-    const interpolateAltitude = (matrix) =>
-        (1 - fracX) * ((1 - fracY) * matrix[ix1][iy1] + fracY * matrix[ix1][iy2]) +
-        fracX * ((1 - fracY) * matrix[ix2][iy1] + fracY * matrix[ix2][iy2]);
-
-    // Calculate the altitude at the given x, y
-    const alt = interpolateAltitude(altitude);
-
-    // Calculate gradients in the x and y directions
-    const dzdx = 10*(altitude[ix2][iy1] - altitude[ix1][iy1]) / (extents.width / (altitude.length - 1));
-    const dzdy = 10*(altitude[ix1][iy2] - altitude[ix1][iy1]) / (extents.height / (altitude[0].length - 1));
-
-    return { z:alt, u: -dzdx, v: -dzdy };
-}
-/*function interpolate2DFiels(s_field, x, y,timeIndex) {
-    // Destructuring to get origin, extents, and altitude
-    const { origin, extents, altitude } = s_field;
-
-    // Accessing the U and V values for the specific time index
-    const { U, V } = s_field.data[timeIndex];
-    
-    //console.log(Object.keys(s_field.data));
-
-    // Calculate indices and fractional parts for interpolation
-    const fx = ((x - origin.x) / extents.width) * (altitude.length - 1);
-    const fy = ((y - origin.y) / extents.height) * (altitude[0].length - 1);
-    const ix1 = Math.floor(fx);
-    const iy1 = Math.floor(fy);
-    const ix2 = Math.min(ix1 + 1, altitude.length - 1);
-    const iy2 = Math.min(iy1 + 1, altitude[0].length - 1);
-    const fracX = fx - ix1;
-    const fracY = fy - iy1;
-
-    // Inline bilinear interpolation
-    const interpolate = (matrix) => 
-        (1 - fracX) * ((1 - fracY) * matrix[ix1][iy1] + fracY * matrix[ix1][iy2]) +
-        fracX * ((1 - fracY) * matrix[ix2][iy1] + fracY * matrix[ix2][iy2]);
-
-    return {
-        z: interpolate(altitude),
-        u: interpolate(U),
-        v: interpolate(V)
-    };
-}*/
-
-
-AFRAME.registerComponent('play-component', {
-    schema: {
-      color: { default: 'green' }
-    },
-
-    init: function () {
-      var data = this.data;
-      var el = this.el; // Reference to the element this component is attached to
-      var defaultColor = el.getAttribute('material').color;
-        console.log("new play comp");
-      el.addEventListener('click', function () {
-        el.setAttribute('material', 'color', data.color); // Change color on click
-        var flowTracerComponent = document.getElementById('surface-current').components['flow-tracer'];
-        if (flowTracerComponent) {
-          flowTracerComponent.togglePlay(); // Toggle play
-          console.log("Playing");
-        }
-      });
-
-      // Reset color when not clicked
-      el.addEventListener('mouseleave', function () {
-        el.setAttribute('material', 'color', defaultColor);
-      });
-    }
-});
-
 const LAGRANGIAN = 0; 
 const FIRECASTER = 1; 
 const RAIN = 2;
 const firecasterAPI = 'https://forefire.univ-corse.fr/twin/simapi/forefireAPI.php?';
-
-
-AFRAME.registerComponent('text-info', {
-  schema: {
-    defaultText: { default: 'Default Text' },
-    progress: { default: 0, type: 'number' } // Progress value for the red bar
-  },
-
-  init: function () {
-    // Create the text entity
-    this.barWidth = 0.2;
-
-      
-    this.textInfo = document.createElement('a-text');
-    this.textInfo.setAttribute('value', "Info");
-    this.textInfo.setAttribute('color', 'lightgray');
-    this.textInfo.setAttribute('position', '-0.1 0.004 -0.097'); // Slightly in front of the parent entity
-    this.textInfo.setAttribute('scale', '0.04 0.04 0.04'); // Slightly in front of the parent entity
-    this.el.appendChild(this.textInfo);
- 
-    this.textCredits = document.createElement('a-text');
-    this.textCredits.setAttribute('value', "UNITI - Squadra Ardente");
-    this.textCredits.setAttribute('color', 'lightgray');
-    this.textCredits.setAttribute('position', '-0.1 -0.008 -0.097'); // Slightly in front of the parent entity
-    this.textCredits.setAttribute('scale', '0.02 0.02 0.02'); // Slightly in front of the parent entity
-    this.el.appendChild(this.textCredits);
-      
-    this.textCredits2 = document.createElement('a-text');
-    this.textCredits2.setAttribute('value', "Open-Data - Arome Meteo-France");
-    this.textCredits2.setAttribute('color', 'lightgray');
-    this.textCredits2.setAttribute('position', '-0.001 -0.008 -0.097'); // Slightly in front of the parent entity
-    this.textCredits2.setAttribute('scale', '0.02 0.02 0.02'); // Slightly in front of the parent entity
-    this.el.appendChild(this.textCredits2);    
-      
-    var plane = document.createElement('a-plane');
-    plane.setAttribute('position', '0 0 -0.1'); // Below the text
-    plane.setAttribute('width', this.barWidth); // Assuming full width
-    plane.setAttribute('height', '0.03'); // 10% of the height
-    plane.setAttribute('color', 'black');
-    plane.setAttribute('material', 'opacity: 1');
-    this.el.appendChild(plane);
-
-    // Create the red bar
-    this.bar = document.createElement('a-plane');
-    this.bar.setAttribute('position', '0 0 -0.099'); // Start at the left, in front of the white plane
-    this.bar.setAttribute('width', '0.002'); // Width of the bar
-    this.bar.setAttribute('height', '0.03');
-    this.bar.setAttribute('color', 'red');
-    this.el.appendChild(this.bar);
-      
-    // Create the sim bar
-    this.simbar = document.createElement('a-plane');
-    this.simbar.setAttribute('position', '0 0 -0.099'); // Start at the left, in front of the white plane
-    this.simbar.setAttribute('width', '0.005'); // Width of the bar
-    this.simbar.setAttribute('height', '0.03');
-    this.simbar.setAttribute('color', 'blue');
-    this.el.appendChild(this.simbar);
-      
-    // Create the sim bar
-    this.simMinbar = document.createElement('a-plane');
-    this.simMinbar.setAttribute('position', '0 0 -0.099'); // Start at the left, in front of the white plane
-    this.simMinbar.setAttribute('width', '0.005'); // Width of the bar
-    this.simMinbar.setAttribute('height', '0.03');
-    this.simMinbar.setAttribute('color', 'yellow');
-    this.el.appendChild(this.simMinbar);  
-    
-      
-    // Update the position of the red bar based on progress
-    this.set_progress(this.data.progress);
-    this.set_simmaxtime(this.data.simMaxTime);
-    this.set_simmintime(this.data.simMinTime);
-  },
-
-  update: function (oldData) {
-    // Update text and progress
-  /*  var textEl = this.el.children[0];
-    if (oldData.defaultText !== this.data.defaultText) {
-      textEl.setAttribute('value', this.data.defaultText);
-    }*/
-     if (oldData.progress !== this.data.progress) {
-      this.set_progress(this.data.progress);
-    }
-  },
-
-  set_progress: function (value) {
-    // Calculate new position for the red bar based on progress
-
-    var newPositionX =  +this.barWidth * value;
- 
-    this.bar.setAttribute('position', {x: this.barWidth * value -(this.barWidth/2), y: 0, z: -0.099}); 
-  },  
-    set_simmaxtime: function (value) {
-    // Calculate new position for the red bar based on progress
-
-    var newPositionX =  +this.barWidth * value;
- 
-    this.simbar.setAttribute('position', {x: this.barWidth * value -(this.barWidth/2), y: 0, z: -0.099}); 
-  },
-    set_simmintime: function (value) {
-    // Calculate new position for the red bar based on progress
-
-    var newPositionX =  +this.barWidth * value;
- 
-    this.simMinbar.setAttribute('position', {x: this.barWidth * value -(this.barWidth/2), y: 0, z: -0.099}); 
-  },
- 
-  update_info: function (newText) {
-    // Method to update the text
-     this.el.children[0].setAttribute('value', newText);
-  }
-});
-
-
-// Pause Component
-AFRAME.registerComponent('pause-component', {
-    schema: {
-      color: { default: 'red' }
-    },
-
-    init: function () {
-      var data = this.data;
-      var el = this.el; // Reference to the element this component is attached to
-      var defaultColor = el.getAttribute('material').color;
-
-      el.addEventListener('click', function () {
-        el.setAttribute('material', 'color', data.color); // Change color on click
-        var flowTracerComponent = document.getElementById('surface-current').components['flow-tracer'];
-        if (flowTracerComponent) {
-          flowTracerComponent.togglePause(); // Toggle pause
-          console.log("Pausing");
-        }
-      });
-
-        
-      el.addEventListener('mouseleave', function () {
-        el.setAttribute('material', 'color', defaultColor);
-      });
-    }
-});
-
-AFRAME.registerComponent('shoot-controls', {
-  // dependencies: ['tracked-controls'],
-  schema: {
-    hand: { default: 'left' }
-  },
-
-  init: function () {
-    var self = this;
-    this.flow_tracer = null;
-    this.onButtonChanged = this.onButtonChanged.bind(this);
-  },
-
-  play: function () {
-    var el = this.el;
-    el.addEventListener('buttonchanged', this.onButtonChanged);
-  },
-
-  pause: function () {
-    var el = this.el;
-    el.removeEventListener('buttonchanged', this.onButtonChanged);
-  },
-
-  mapping: {
-    axis0: 'trackpad',
-    axis1: 'trackpad',
-    button0: 'trackpad',
-    button1: 'trigger',
-    button2: 'grip',
-    button3: 'menu',
-    button4: 'system'
-  },
-
-  onButtonChanged: function (evt) {
-    var buttonId = evt.detail.id;
-    var buttonStates = evt.detail.state;
-    //this.flow_tracer.update_info(buttonId+" "+buttonStates);
-      if (buttonId === 4 && buttonStates.pressed) {
-      this.flow_tracer.speedUp();
-      }
-    if (buttonId === 5 && buttonStates.pressed) {
-      this.flow_tracer.speedDown();
-      }
-    // Check if the trigger (button 1) is pressed
-    if (buttonId === 0 && buttonStates.pressed) {
-      this.handleTriggerPress();
-    }
-    if (buttonId === 1 && buttonStates.pressed) {
-        this.flow_tracer.switchInteractionMode();
- 
-    }
-    
-  },
- 
-  handleTriggerPress: function() {
-  // Access the raycaster component
-  var raycasterEl = this.el.components.raycaster;
-
-  // Check if the raycaster is currently intersecting with any entities
-  if (raycasterEl && raycasterEl.intersectedEls.length > 0) {
-    // Iterate through intersected entities
-    for (var i = 0; i < raycasterEl.intersectedEls.length; i++) {
-      var intersectedEl = raycasterEl.intersectedEls[i];
- 
-      // Check if the intersected entity is the flow_map
-      if (intersectedEl.id === 'flow_map_caster') {
-        // Get the intersection detail
-        var intersectionDetail = raycasterEl.getIntersection(intersectedEl);
-
-        if (intersectionDetail) {
-          // Intersection point with the flow_map
-          var intersectionPoint = intersectionDetail.point;
-         
-          this.flow_tracer.injectParticleXY(intersectionPoint);
-          // Handle your specific logic here
-          // ...
-        }
-      }
-    }
-  }
-},
-    setControlled: function(tcomp) {
-
-        this.flow_tracer = tcomp;
-        
-        this.flow_tracer.update_info("Waiting initialisation");
-    },
-
-  update: function () {
-    var data = this.data;
-    var el = this.el;
-
-  }
-});
-
-
-
 
 AFRAME.registerComponent('flow-tracer', {
     
@@ -502,10 +66,7 @@ AFRAME.registerComponent('flow-tracer', {
     }
 
     this.el.appendChild(terrainEntity);
-        
-        
-        
-        
+       
     this.isStopped = true;
     this.text_tracker = null;
     this.hand_control = null;
@@ -519,8 +80,6 @@ AFRAME.registerComponent('flow-tracer', {
         })
         .then(blob => JSZip.loadAsync(blob))
         .then(zip => {
-            // Remplacez 'nomfichier.json' par le nom de votre fichier JSON à l'intérieur du ZIP
-  
             return zip.file('data.json').async('string');
         })
         .then(content => {
@@ -545,16 +104,13 @@ AFRAME.registerComponent('flow-tracer', {
             this.pointsGeometry = new THREE.BufferGeometry();
             this.trail_length = this.data.trail_length;
             this.flowTracerSpeed = this.data.flowTracerSpeed;
-            this.cMaxAps =   1000.0/this.data.target_advect_per_s;
-            //this.speedups_values = [-3600*24*7,-3600*24*2,-3600*24,-3600*3,-3600, -600,-60,-10, -1, 0, 1, 10, 60, 600, 3600, 3600*3, 3600*24,3600*48,3600*24*7];
-            //this.speedups_text = ["a week back","2 days back","a day back","3 hours back","an hour back",  "10 minutes back","a minute back", "10 seconds back", "a second back", "nothing", "a second", "10 seconds","a minute", "10 minutes", "an hour", "3 hours", "a day","2 days","a week"];
-            
+            this.cMaxAps =   1000.0/this.data.target_advect_per_s;        
             this.speedups_values = [-3600, -600,-60, 0, 60, 600, 3600];
             this.speedups_text = ["an hour back",  "10 minutes back","a minute back","nothing", "a minute", "10 minutes","an hour"];
             
             this.speedup_index = 3;
         
-            this.interactionMode = FIRECASTER;
+            this.interactionMode = LAGRANGIAN;
             
             // FIRE SIMULATION STUFFFFF
             this.fcastPath = 0
@@ -799,10 +355,6 @@ AFRAME.registerComponent('flow-tracer', {
             
         }
 
-        //    newSTR += "\nFPS "+(1000.0/this.tickTimeDelta).toFixed(2);
-    //    newSTR += "\ntdelt "+(this.tickTimeDelta/1000.0).toFixed(2);
-    //    newSTR += "\nTtime "+(this.currentAdvDuration).toFixed(2);
-    //    newSTR += "\nIs "+(this.cMaxAps).toFixed(2);
         return newSTR;
     },
     loadFirePartsIntoInjected: function() {
@@ -853,7 +405,7 @@ AFRAME.registerComponent('flow-tracer', {
             }else{
                 if (this.interactionMode == LAGRANGIAN){
                     this.interactionMode = RAIN;
-                   this.setInjectionColor(0.1, 0.1, 1.0);
+                   this.setInjectionColor(0.5, 0.5, 1.0);
                 }else{
                     if (this.interactionMode == RAIN){
                         this.interactionMode = FIRECASTER;
@@ -906,7 +458,6 @@ AFRAME.registerComponent('flow-tracer', {
                 }
             });
 
-            // Once the maximum date is found, convert it to milliseconds and assign to this.simMaxTime
             this.simMaxTime = maxDate.getTime();
             this.simMinTime = minDate.getTime();
         
@@ -937,7 +488,6 @@ AFRAME.registerComponent('flow-tracer', {
             }
             if (this.injectCount >= this.number_of_inject){
                 this.injectCount = 0;
-                //return;
             }
           
 
@@ -947,7 +497,6 @@ AFRAME.registerComponent('flow-tracer', {
             this.injected[this.injectCount*4 + 1] = rloc.z;
             this.injected[this.injectCount*4 + 3] = 1;
 
-         //   console.log("Injection at :", this.injected[this.injectCount*4], this.injected[this.injectCount*4 + 2]);
 
             this.injectCount += 1;
             this.shootOK = true;
