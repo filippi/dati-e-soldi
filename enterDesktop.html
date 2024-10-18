@@ -120,6 +120,7 @@ document.addEventListener('click', function(event) {
             // Handle touchstart
             crosshairButton.addEventListener('touchstart', function(event) {
               touchStartTime = Date.now();
+                handleSpacePress(event);
               // Optionally, add visual feedback here
             });
 
@@ -129,12 +130,14 @@ document.addEventListener('click', function(event) {
               if (touchDuration < tapThreshold) {
                 handleSpacePress(event);
               }
+                handleSpacePress(event);
               // Else, it's a long press; do nothing to allow movement controls
             });
 
             // Handle click as a fallback for non-touch devices
             crosshairButton.addEventListener('click', function(event) {
               handleSpacePress(event);
+                
             });
           } else {
             console.error('Crosshair button not found');
