@@ -818,7 +818,7 @@ AFRAME.registerComponent('flow-tracer', {
                      myVP = document.querySelector("a-scene").camera.el.parentNode.object3D.position;
                      mycam = document.querySelector("a-scene").camera.el.object3D.position;
                      
-                       fetch(firecasterAPI+"command=setPos&path="+this.interactPath+"&pseudo="+this.nickname+"&xx="+(myVP.x+mycam.x)+"&yy="+(myVP.y+mycam.y+this.zInteractShift)+"&zz="+(myVP.z+mycam.z)) 
+                       fetch(firecasterAPI+"command=setPos&path="+this.interactPath+"&pseudo="+this.nickname+"&xx="+(myVP.x-mycam.x)+"&yy="+(myVP.y-mycam.y+this.zInteractShift)+"&zz="+(myVP.z-mycam.z)) 
                         .then(response => {
                             if (!response.ok) {
                                 throw new Error('Network response was not ok.');
