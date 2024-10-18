@@ -65,6 +65,20 @@
             };
 
         });
+        
+        // Touch event listener
+        document.addEventListener('touchstart', function(event) {
+            // You can add specific conditions if needed, for example:
+            // - Check if the touch is on a particular element
+            // - Distinguish between single and multiple touches
+
+            // For simplicity, we'll trigger the space press handler on any touch
+            handleSpacePress(event);
+
+            // Optionally, prevent default behavior to avoid unintended side effects
+            event.preventDefault();
+        }, { passive: false });
+        
         var mouse = { x: 0, y: 0 };
          document.addEventListener('mousemove', function(event) {
           mouse.x = 0;//(event.clientX / window.innerWidth) * 2 - 1;
@@ -112,7 +126,7 @@
    
 
         
-             <a-entity  id="myViewPoint"  movement-controls="fly: true; speed: 0.03" rotation="-80 0 0" position="0 1.50 0" look-controls="pointerLockEnabled: true">
+             <a-entity  id="myViewPoint"  movement-controls="fly: true; speed: 0.007" rotation="-80 0 0" position="0 1.50 0" look-controls="pointerLockEnabled: true">
         
                  <a-entity camera position="0 0 0 " rotation="0 0 0" look-controls>
                  
