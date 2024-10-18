@@ -251,11 +251,11 @@ AFRAME.registerComponent('shoot-controls', {
 },
       handleMouseSpacePress: function (event) {
     if (event.code === 'Space') {
-      var mouse = this.mouse;
+      
       var camera = this.el.sceneEl.camera;
       var raycaster = new THREE.Raycaster();
- 
-        raycaster.setFromCamera(myMouse, camera);
+      
+      raycaster.setFromCamera(myMouse, camera);
       var flowMapEl = document.getElementById('flow_map_caster');
       if (!flowMapEl) return;
 

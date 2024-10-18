@@ -191,7 +191,7 @@ function removePoint(geohash) {
     updatePointTypes();
 }
 
-function findPointsWithinRadius(lat, lng, radiusInMeters) {
+function findAllPointsWithinRadius(lat, lng, radiusInMeters) {
     const geohashesWithinRadius = [];
 
     cy.nodes().forEach(node => {
@@ -210,6 +210,32 @@ function findPointsWithinRadius(lat, lng, radiusInMeters) {
 
     return geohashesWithinRadius;
 }
+
+function findPointsWithinRadius(lat, lng, radiusInMeters) {
+    let closestPoint = null;
+    let minDistance = Infinity;
+
+    cy.nodes().forEach(node => {
+        // Exclude nodes of type 'source'
+        if (node.data('type') !== 'source') {
+            // Decode the geohash from the node ID to get [latitude, longitude]
+            const pointLatLng = decodeGeoHash(node.id());
+
+            // Calculate the distance using the haversine formula
+            const distance = haversineDistance(lat, lng, pointLatLng[0], pointLatLng[1]); // Distance in meters
+
+            // Check if the point is within the specified radius and closer than the current minimum
+            if (distance <= radiusInMeters && distance < minDistance) {
+                minDistance = distance;
+                closestPoint = node.id(); // Store the geohash of the closest point
+            }
+        }
+    });
+
+    // Return an array with the closest point's geohash, or an empty array if none found
+    return closestPoint ? [closestPoint] : [];
+}
+
 
 // Initialize Cytoscape
 initializeCytoscape();

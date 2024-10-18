@@ -67,9 +67,9 @@
         });
         var mouse = { x: 0, y: 0 };
          document.addEventListener('mousemove', function(event) {
-          mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-          mouse.y = - (event.clientY / window.innerHeight) * 2 + 1;
-                CLab.setMousePosition(mouse);
+          mouse.x = 0;//(event.clientX / window.innerWidth) * 2 - 1;
+          mouse.y = 0;//- (event.clientY / window.innerHeight) * 2 + 1;
+          CLab.setMousePosition(mouse, event.clientX, event.clientY);
           
 
         });
@@ -112,7 +112,7 @@
    
 
         
-             <a-entity  id="myViewPoint"  movement-controls="fly: true; speed: 0.03" rotation="-80 0 0" position="0 1.50 0">
+             <a-entity  id="myViewPoint"  movement-controls="fly: true; speed: 0.03" rotation="-80 0 0" position="0 1.50 0" look-controls="pointerLockEnabled: true">
         
                  <a-entity camera position="0 0 0 " rotation="0 0 0" look-controls>
                  
@@ -123,7 +123,48 @@
                       scale="1 1 1" 
                       rotation="0 0 00">
                 </a-entity>   
-  
+              <!-- Red Crosshair -->
+            <a-entity 
+              geometry="primitive: ring; radiusInner: 0.005; radiusOuter: 0.006" 
+              material="color: red; shader: flat" 
+              position="0 0 -0.1" 
+              rotation="0 0 0">
+                
+
+                                <!-- Top Line -->
+                    <a-entity 
+                      geometry="primitive: box; height: 0.001; width: 0.01; depth: 0.001" 
+                      material="color: orange; shader: flat" 
+                      position="0.006 0.0 0" 
+                      rotation="0 0 0">
+                    </a-entity>
+
+                    <!-- Bottom Line -->
+                    <a-entity 
+                      geometry="primitive: box; height: 0.001; width: 0.01; depth: 0.001" 
+                      material="color: orange; shader: flat" 
+                      position="-0.006 0 0" 
+                      rotation="0 0 0">
+                    </a-entity>
+
+                    <!-- Left Line -->
+                    <a-entity 
+                      geometry="primitive: box; height: 0.01; width: 0.001; depth: 0.001" 
+                      material="color: orange; shader: flat" 
+                      position="0.00 0.006 0" 
+                      rotation="0 0 0">
+                    </a-entity>
+
+                    <!-- Right Line -->
+                    <a-entity 
+                      geometry="primitive: box; height: 0.01; width: 0.001; depth: 0.001" 
+                      material="color: orange; shader: flat" 
+                      position="0 -0.006 0" 
+                      rotation="0 0 0">
+                    </a-entity>
+                
+                
+            </a-entity>
            
             </a-entity>
   

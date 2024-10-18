@@ -640,7 +640,7 @@ AFRAME.registerComponent('flow-tracer', {
             return;
         }
 
-        if (this.interactionMode == LAGRANGIAN || this.interactionMode === RAIN) {
+        if (this.interactionMode == LAGRANGIAN || this.interactionMode === RAIN || this.interactionMode == NETWORK) {
             if (!this.shootOK) {
                 return;
             }
@@ -659,12 +659,18 @@ AFRAME.registerComponent('flow-tracer', {
         }
         if (this.interactionMode == NETWORK) {
             this.powerNetwork = getAllNodesWithTypes();
+            console.log(intersectionPoint.x, intersectionPoint.z);
             const { lat, lon } = transformPointToLatLon(intersectionPoint.x, intersectionPoint.z, this.data2D.BBox, this.origin, this.extents);
             clickEvent(lat, lon);
             
               this.refreshNetwork();
             this.networkInfoText = printCost();
             this.text_tracker.update_status(this.networkInfoText);
+            
+            
+            
+            
+            
           
         }
         if (this.interactionMode == FIRECASTER) {
