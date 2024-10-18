@@ -4,6 +4,28 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Dati e soldi AR</title>
+    <style>
+      /* Style for the invisible overlay button */
+      #crosshair-button {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 60px; /* Adjust size as needed */
+        height: 60px;
+        transform: translate(-50%, -50%);
+        background: rgba(0, 0, 0, 0); /* Fully transparent */
+        border: none;
+        outline: none;
+        z-index: 1000; /* Ensure it's on top */
+        cursor: pointer;
+      }
+
+      /* Optional: Visual feedback for touch interactions */
+      #crosshair-button:active {
+        background: rgba(255, 255, 255, 0.1);
+      }
+    </style>
+    <!-- A-Frame and other scripts -->
     <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v7.2.0/dist/aframe-extras.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
@@ -23,12 +45,12 @@
           var position = movementControlEntity.getAttribute('position');
           var rotation = cameraEl.getAttribute('rotation');
           console.log(`<a-entity movement-controls="fly: true; speed: 10" position="${position.x} ${position.y} ${position.z}" rotation="${rotation.x} ${rotation.y} ${rotation.z}" look-controls>
-<a-entity camera position="0 0 0" rotation="0 0 0" look-controls></a-entity>
-</a-entity>`);
+  <a-entity camera position="0 0 0" rotation="0 0 0" look-controls></a-entity>
+  </a-entity>`);
         } else {
           console.error('Required entities not found');
         }
-      };
+      }
 
       document.addEventListener('DOMContentLoaded', function() {
         var sceneEl = document.getElementById('flowview');
@@ -36,11 +58,11 @@
           
           var flowTracerComponent = document.getElementById('surface-current').components['flow-tracer'];
           
-          console.log("Flow ",flowTracerComponent);
+          console.log("Flow ", flowTracerComponent);
           var TLab = document.getElementById('timeLabel').components['text-info'];
           flowTracerComponent.setTextTracker(TLab);
           TLab.update_credits(" [p]Pause [m]Mode [Space]act [arrows]move");
-          TLab.update_credits2("[drag]rotate   Name:"+flowTracerComponent.nickname);
+          TLab.update_credits2("[drag]rotate   Name:" + flowTracerComponent.nickname);
           var CLab = document.getElementById('handControl').components['shoot-controls'];
           flowTracerComponent.setHandControl(CLab);
           
@@ -74,30 +96,48 @@
                 break;
             }
           });
-
-          // Remove or comment out the global touchstart listener if you only want to handle touches on the crosshair
-          /*
-          document.addEventListener('touchstart', function(event) {
-              handleSpacePress(event);
-              event.preventDefault();
-          }, { passive: false });
-          */
-
-          // Add touch and click event listeners to the crosshair
-          var crosshairEl = document.getElementById('Crosshair');
           
-          if (crosshairEl) {
-            // Ensure the crosshair can receive pointer events
-            crosshairEl.setAttribute('class', 'raycastable'); // Add a class if required by raycaster
-            crosshairEl.setAttribute('cursor', ''); // Optionally, add a cursor component
+// Mouse click event listener for non-touch devices, takes precedence if pointerLock is enabled
+document.addEventListener('click', function(event) {
+    // Check if pointer lock is active
+    if (document.pointerLockElement) {
+        // Trigger the desired function
+        handleSpacePress(event);
+        
+        // Prevent default behavior to avoid conflicting actions
+        event.preventDefault();
+    }
+}, true); // Use capturing phase to ensure this listener runs before others
 
-            // Add click listener
-            crosshairEl.addEventListener('click', handleSpacePress);
 
-            // Add touchstart listener
-            crosshairEl.addEventListener('touchstart', handleSpacePress);
+          // Add event listeners to the invisible crosshair button
+          var crosshairButton = document.getElementById('crosshair-button');
+          
+          if (crosshairButton) {
+            let touchStartTime = 0;
+            const tapThreshold = 300; // milliseconds
+
+            // Handle touchstart
+            crosshairButton.addEventListener('touchstart', function(event) {
+              touchStartTime = Date.now();
+              // Optionally, add visual feedback here
+            });
+
+            // Handle touchend
+            crosshairButton.addEventListener('touchend', function(event) {
+              const touchDuration = Date.now() - touchStartTime;
+              if (touchDuration < tapThreshold) {
+                handleSpacePress(event);
+              }
+              // Else, it's a long press; do nothing to allow movement controls
+            });
+
+            // Handle click as a fallback for non-touch devices
+            crosshairButton.addEventListener('click', function(event) {
+              handleSpacePress(event);
+            });
           } else {
-            console.error('Crosshair element not found');
+            console.error('Crosshair button not found');
           }
 
           // Existing mousemove listener
@@ -113,6 +153,9 @@
     </script>
   </head>
   <body> 
+
+    <!-- Invisible button overlaying the crosshair -->
+    <button id="crosshair-button" aria-label="Activate" tabindex="-1"></button>
 
     <a-scene id="flowview" arjs='sourceType: webcam; debugUIEnabled: false;' background="color: black"> 
         <!-- renderer="antialias: true" -->
@@ -198,7 +241,7 @@
            
             </a-entity>
   
- 
+
                  </a-entity>
                 <a-cursor id="handControl" 
                       laser-controls="hand: right" 

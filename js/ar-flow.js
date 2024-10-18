@@ -561,11 +561,11 @@ AFRAME.registerComponent('flow-tracer', {
        }
         this.interactionPossible = false;
         
-            if (this.interactionMode == FIRECASTER){
-                 this.interactionMode = LAGRANGIAN;
+            if (this.interactionMode == LAGRANGIAN){
+                 this.interactionMode = FIRECASTER;
                   this.setInjectionColor(0.9, 0.9, 0.9);
             }else{
-                if (this.interactionMode == LAGRANGIAN){
+                if (this.interactionMode == FIRECASTER){
                     this.interactionMode = RAIN;
                    this.setInjectionColor(0.5, 0.5, 1.0);
                 }else{
@@ -575,7 +575,7 @@ AFRAME.registerComponent('flow-tracer', {
                           this.setInjectionColor(1.0, 0.5, 0.1);
                     }else{
                     if (this.interactionMode == NETWORK){
-                        this.interactionMode = FIRECASTER;
+                        this.interactionMode = LAGRANGIAN;
                           this.setInjectionColor(1.0, 0.5, 0.5);
                     }
                 }
