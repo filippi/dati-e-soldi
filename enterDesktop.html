@@ -8,92 +8,109 @@
     <script src="https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v7.2.0/dist/aframe-extras.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
     <script src="https://unpkg.com/aframe-terrain-model-component@1.0.1/dist/aframe-terrain-model-component.min.js"></script>
-          <script src="https://unpkg.com/cytoscape/dist/cytoscape.min.js"></script>
+    <script src="https://unpkg.com/cytoscape/dist/cytoscape.min.js"></script>
     <script id="data-script" src="js/network.js" data-edges-path="sample_data/edges.json" data-nodes-path="sample_data/nodes.json"></script>
-     <script src="js/ARData.js"></script>    
-      <script src="js/ar-flow-components.js"></script>
+    <script src="js/ARData.js"></script>    
+    <script src="js/ar-flow-components.js"></script>
     <script src="js/ar-flow.js"></script>
-<script>
-  // This function prints the position from the entity with movement-controls and the rotation from the camera
-  function printPosAndRot() {
-    var movementControlEntity = document.querySelector('[movement-controls]');
-    var cameraEl = document.querySelector('a-camera') || document.querySelector('[camera]');
-    
-    if (movementControlEntity && cameraEl) {
-      var position = movementControlEntity.getAttribute('position');
-      var rotation = cameraEl.getAttribute('rotation');
-      console.log(`<a-entity movement-controls="fly: true; speed: 10" position="${position.x} ${position.y} ${position.z}" rotation="${rotation.x} ${rotation.y} ${rotation.z}" look-controls>\n<a-entity camera position="0 0 0" rotation="0 0 0" look-controls></a-entity>\n</a-entity>`);
-    } else {
-      console.error('Required entities not found');
-    }
-  };
+    <script>
+      // This function prints the position from the entity with movement-controls and the rotation from the camera
+      function printPosAndRot() {
+        var movementControlEntity = document.querySelector('[movement-controls]');
+        var cameraEl = document.querySelector('a-camera') || document.querySelector('[camera]');
+        
+        if (movementControlEntity && cameraEl) {
+          var position = movementControlEntity.getAttribute('position');
+          var rotation = cameraEl.getAttribute('rotation');
+          console.log(`<a-entity movement-controls="fly: true; speed: 10" position="${position.x} ${position.y} ${position.z}" rotation="${rotation.x} ${rotation.y} ${rotation.z}" look-controls>
+<a-entity camera position="0 0 0" rotation="0 0 0" look-controls></a-entity>
+</a-entity>`);
+        } else {
+          console.error('Required entities not found');
+        }
+      };
 
-  // Example: Call this function when the 'p' key is pressed
-  document.addEventListener('DOMContentLoaded', function() {
-      
-    var sceneEl = document.getElementById('flowview');
-    sceneEl.addEventListener('loaded', function() {
-      
-      var flowTracerComponent = document.getElementById('surface-current').components['flow-tracer'];
-      
-      console.log("Flow ",flowTracerComponent);
-      var TLab = document.getElementById('timeLabel').components['text-info'];
-      flowTracerComponent.setTextTracker(TLab);
-      TLab.update_credits(" [p]Pause [m]Mode [Space]act [arrows]move");
-      TLab.update_credits2("[drag]rotate   Name:"+flowTracerComponent.nickname);
-      var CLab = document.getElementById('handControl').components['shoot-controls'];
-      flowTracerComponent.setHandControl(CLab);
-      
-        document.addEventListener('keydown', function(event) {
+      document.addEventListener('DOMContentLoaded', function() {
+        var sceneEl = document.getElementById('flowview');
+        sceneEl.addEventListener('loaded', function() {
+          
+          var flowTracerComponent = document.getElementById('surface-current').components['flow-tracer'];
+          
+          console.log("Flow ",flowTracerComponent);
+          var TLab = document.getElementById('timeLabel').components['text-info'];
+          flowTracerComponent.setTextTracker(TLab);
+          TLab.update_credits(" [p]Pause [m]Mode [Space]act [arrows]move");
+          TLab.update_credits2("[drag]rotate   Name:"+flowTracerComponent.nickname);
+          var CLab = document.getElementById('handControl').components['shoot-controls'];
+          flowTracerComponent.setHandControl(CLab);
+          
+          // Define the handleSpacePress function
+          function handleSpacePress(event) {
+            CLab.handleMouseSpacePress(event);
+          }
 
-            if (event.key === 'p') {
+          // Keyboard event listener
+          document.addEventListener('keydown', function(event) {
+            switch (event.key) {
+              case 'p':
                 printPosAndRot();
                 flowTracerComponent.togglePause();
                 console.log("Pausing");
-            };
-            if (event.key === 'a') {
+                break;
+              case 'a':
                 flowTracerComponent.speedUp();
-            };
-            if (event.key === 'b') {
+                break;
+              case 'b':
                 flowTracerComponent.speedDown();
-            };
-            if (event.key === 'm') {
-                flowTracerComponent.switchInteractionMode()
-            };
-            if (event.key === ' ') {
-                CLab.handleMouseSpacePress(event);
-            };
+                break;
+              case 'm':
+                flowTracerComponent.switchInteractionMode();
+                break;
+              case ' ':
+                handleSpacePress(event);
+                break;
+              default:
+                // Do nothing for other keys
+                break;
+            }
+          });
 
-        });
-        
-        // Touch event listener
-        document.addEventListener('touchstart', function(event) {
-            // You can add specific conditions if needed, for example:
-            // - Check if the touch is on a particular element
-            // - Distinguish between single and multiple touches
+          // Remove or comment out the global touchstart listener if you only want to handle touches on the crosshair
+          /*
+          document.addEventListener('touchstart', function(event) {
+              handleSpacePress(event);
+              event.preventDefault();
+          }, { passive: false });
+          */
 
-            // For simplicity, we'll trigger the space press handler on any touch
-            handleSpacePress(event);
-
-            // Optionally, prevent default behavior to avoid unintended side effects
-            event.preventDefault();
-        }, { passive: false });
-        
-        var mouse = { x: 0, y: 0 };
-         document.addEventListener('mousemove', function(event) {
-          mouse.x = 0;//(event.clientX / window.innerWidth) * 2 - 1;
-          mouse.y = 0;//- (event.clientY / window.innerHeight) * 2 + 1;
-          CLab.setMousePosition(mouse, event.clientX, event.clientY);
+          // Add touch and click event listeners to the crosshair
+          var crosshairEl = document.getElementById('Crosshair');
           
+          if (crosshairEl) {
+            // Ensure the crosshair can receive pointer events
+            crosshairEl.setAttribute('class', 'raycastable'); // Add a class if required by raycaster
+            crosshairEl.setAttribute('cursor', ''); // Optionally, add a cursor component
 
+            // Add click listener
+            crosshairEl.addEventListener('click', handleSpacePress);
+
+            // Add touchstart listener
+            crosshairEl.addEventListener('touchstart', handleSpacePress);
+          } else {
+            console.error('Crosshair element not found');
+          }
+
+          // Existing mousemove listener
+          var mouse = { x: 0, y: 0 };
+          document.addEventListener('mousemove', function(event) {
+            mouse.x = 0; //(event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = 0; //- (event.clientY / window.innerHeight) * 2 + 1;
+            CLab.setMousePosition(mouse, event.clientX, event.clientY);
+          });
+          
         });
-        
-        
-     });
-
-
-});
-</script>
+      });
+    </script>
   </head>
   <body> 
 
@@ -124,7 +141,6 @@
         </a-entity>
                
    
-
         
              <a-entity  id="myViewPoint"  movement-controls="fly: true; speed: 0.007" rotation="-80 0 0" position="0 1.50 0" look-controls="pointerLockEnabled: true">
         
@@ -138,12 +154,12 @@
                       rotation="0 0 00">
                 </a-entity>   
               <!-- Red Crosshair -->
-            <a-entity 
+            <a-entity id="Crosshair" 
               geometry="primitive: ring; radiusInner: 0.005; radiusOuter: 0.006" 
               material="color: red; shader: flat" 
               position="0 0 -0.1" 
               rotation="0 0 0">
-                
+              
 
                                 <!-- Top Line -->
                     <a-entity 
@@ -182,7 +198,7 @@
            
             </a-entity>
   
-
+ 
                  </a-entity>
                 <a-cursor id="handControl" 
                       laser-controls="hand: right" 

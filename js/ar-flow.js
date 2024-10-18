@@ -746,7 +746,9 @@ AFRAME.registerComponent('flow-tracer', {
     setTextTracker: function(tcomp) {
         this.text_tracker = tcomp;
     },
-
+    togglePause: function() {
+        this.isStopped = !this.isStopped;
+    },
     setHandControl: function(tcomp) {
         this.hand_control = tcomp;
         this.hand_control.setControlled(this);
