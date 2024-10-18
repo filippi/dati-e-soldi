@@ -23,6 +23,7 @@ AFRAME.registerComponent('flow-tracer', {
         dataLines: {type: 'number', default: 10},
         demMax: {type: 'number', default: 10},
         demTexture: {type: 'string', default: "none"},
+        zInteractShift: {type: 'number', default: 0},
         dataPointResolutionAlongX: {type: 'number', default:100}, // one point equals 1000 meters by default
         dataPointResolutionAlongY: {type: 'number', default:100}, // one point equals 1000 meters by default
         verticalExageration: {type: 'number', default: 1}
@@ -32,7 +33,7 @@ AFRAME.registerComponent('flow-tracer', {
         this.resolution  = this.data.scale; // one real meter equals this.data.scale meters
         this.dataPointResolution = this.data.dataPointResolution;
         this.maxAltitude = this.data.demMax;
- 
+        this.zInteractShift = this.data.zInteractShift;
         const corsicanNames = [
             "MagicFigatelli",
             "FageoleRossu",
@@ -145,7 +146,7 @@ AFRAME.registerComponent('flow-tracer', {
                 this.speedups_values = [-3600, -600, -60, 0, 60, 600, 3600];
                 this.speedups_text = ["an hour back", "10 minutes back", "a minute back", "nothing", "a minute", "10 minutes", "an hour"];
 
-                this.speedup_index = 3;
+                this.speedup_index = 5;
 
                 this.interactionMode = NETWORK;
 
@@ -415,6 +416,27 @@ AFRAME.registerComponent('flow-tracer', {
 
                 // Initial refresh of the network
                 this.refreshNetwork();
+            
+            
+            
+            if (this.interactPath != 0){
+                       fetch(firecasterAPI+"command=clearPositions&path="+this.interactPath) 
+                        .then(response => {
+                            if (!response.ok) {
+                                throw new Error('Network response was not ok.');
+                            }
+                           console.log(this.nickname, response.json());
+                            
+                        });
+                    
+
+                    }
+            
+            
+            
+            
+            
+            
 
             })
             .catch(error => console.error('Erreur lors du chargement du fichier JSON:', error));
@@ -789,7 +811,7 @@ AFRAME.registerComponent('flow-tracer', {
                 if (this.interactPath != 0){
                      myVP = document.querySelector("a-scene").camera.el.parentNode.object3D.position;
                     
-                       fetch(firecasterAPI+"command=setPos&path="+this.interactPath+"&pseudo="+this.nickname+"&xx="+myVP.x+"&yy="+myVP.y+"&zz="+myVP.z) 
+                       fetch(firecasterAPI+"command=setPos&path="+this.interactPath+"&pseudo="+this.nickname+"&xx="+myVP.x+"&yy="+(myVP.y+this.zInteractShift)+"&zz="+myVP.z) 
                         .then(response => {
                             if (!response.ok) {
                                 throw new Error('Network response was not ok.');

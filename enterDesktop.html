@@ -39,8 +39,8 @@
       console.log("Flow ",flowTracerComponent);
       var TLab = document.getElementById('timeLabel').components['text-info'];
       flowTracerComponent.setTextTracker(TLab);
-      TLab.update_credits(" - Keyboard: [p]Pause [m]Mode [Space]Interact");
-      TLab.update_credits2("[arrows] move [dragMouse] rotate");
+      TLab.update_credits(" [p]Pause [m]Mode [Space]act [arrows]move");
+      TLab.update_credits2("[drag]rotate   Name:"+flowTracerComponent.nickname);
       var CLab = document.getElementById('handControl').components['shoot-controls'];
       flowTracerComponent.setHandControl(CLab);
       
@@ -104,6 +104,7 @@
                                 demMax: 2489;
                                demTexture: url(sample_data/centre.jpg); 
                                wireflame: false;
+                               zInteractShift: -1;
                                verticalExageration: 3"
                   position="0 1 0">
         </a-entity>

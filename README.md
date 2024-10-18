@@ -42,14 +42,14 @@ Après avoir détruit des pylônes, la partie du réseau qui n'est plus connect�
 
 - **Collaboration en temps réel** : toutes les personnes qui sont connectées à l'outil sont présentes et visibles dans un même environnement, peu importe la plateforme utilisée.
 
-- **Interactions diverses** : 3 simulations sont disponibles : en mode **fumée** et **pluie**, interagir avec la carte créée une particule, qui va être influencée par le vent et le terrain. En mode **réseau**, cliquer sur un pylône électrique simule sa destruction, et permet de visualiser les zones du réseau impactées.
+- **Interactions diverses** : 4 simulations sont disponibles : en mode **fumée** et **pluie**, interagir avec la carte créée une particule, qui va être influencée par le vent et le terrain. **Feu**, pour lancer un incendie sur une zone. En mode **réseau**, cliquer sur un pylône électrique simule sa destruction, et permet de visualiser les zones du réseau impactées.
 
 - **Estimation des coûts** : L'impact sur le réseau est chiffré selon le coût de remplacement des pylônes détruits et le coût d'indemnisation des logements touchés par heure de coupure.
 
 ## Données utilisées
 
-- Données météo Arome
-- Données satellites et topologiques de la Corse
+- Données météo ouvertes Arome [Météo-France] : (https://donneespubliques.meteofrance.fr)
+- Données satellites et topologiques de la Corse : [IGN] (https://www.data.gouv.fr/fr/datasets/bd-topo-r/)
 - Lignes hautes tension et postes sources d'[EDF Corse](https://opendata-corse.edf.fr)
 - Sites de production d'électricité d'[OpenStreetMap](https://www.openstreetmap.org)
 
