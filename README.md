@@ -72,6 +72,8 @@ Après avoir détruit des pylônes, la partie du réseau qui n'est plus connect�
 - **Antoine Belgodère** : Chercheur en économie
 
 - **Jean-Baptiste Filippi** : Chercheur en informatique
+
+- **Big Brother** : Les différentes IA qui nous ont servi d'ingénieurs
   
 ## Fichiers
 
