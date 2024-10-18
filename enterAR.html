@@ -38,6 +38,7 @@
       
       console.log("Flow ",flowTracerComponent);
       var TLab = document.getElementById('timeLabel').components['text-info'];
+        TLab.update_credits2("  Name:"+flowTracerComponent.nickname);
       flowTracerComponent.setTextTracker(TLab);
       
       var CLab = document.getElementById('handControl').components['shoot-controls'];
@@ -65,25 +66,10 @@
   var camera = document.querySelector('[camera]');
   var scene = document.querySelector('a-scene');
   var TLab = document.getElementById('timeLabel').components['text-info'];
- 
+  
       
       var CLab = document.getElementById('handControl').components['shoot-controls'];
-  // Function to move the timeLabel to the camera
-  function moveToCamera() {
-    camera.appendChild(timeLabel);
-    TLab.setAttribute('defaultText',"Not loaded" );
-    TLab.setAttribute('color',"black" );
-    TLab.setAttribute('rotation', "-0 0 0");
-  }
 
-  // Function to move the timeLabel to the handControl
-  function moveToHandControl() {
-    CLab.appendChild(timeLabel);
-    TLab.setAttribute('defaultText',"Not loaded" );
-    TLab.setAttribute('color',"black" );
-    TLab.setAttribute('position', "0 0.20 0.12");
-    TLab.setAttribute('rotation', "-60 10 0");
-  }
 
 
 });
